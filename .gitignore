@@ -2,4 +2,6 @@ node_modules/
 .idea/
 testimages/
 features/
-test.js
+test/images/*/*.jpg
+test/graph.jpg
+!/images/**/.gitkeep
