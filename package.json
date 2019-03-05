@@ -1,0 +1,11 @@
+{
+  "name": "card-warp",
+  "version": "1.0.0",
+  "description": "Detects a card on an image and warps it straight",
+  "main": "src/CardWarp.js",
+  "scripts": {
+    "start": "node ./test.js"
+  },
+  "author": "Benjamin Laib <benjamin.laib@techteamer.com>",
+  "license": "MIT"
+}

@@ -1,0 +1,7 @@
+version: '3'
+services:
+  card-transform:
+    build: ..
+    image: card-transform
+    volumes:
+      - "./:/source:rw"
