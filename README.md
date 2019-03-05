@@ -42,12 +42,27 @@ detector.getCard(fs.readFileSync('input.jpg'), descriptors)
   })
 ```
 
-### Docker
+### Run
 
-You can just use the provided `Dockerfile` combined with `docker-compose.yml`, it should work out of the box. You just have to create an `app.js` file calling the module.
+- Create a JS file that calls the API correctly
+- Edit the `warp` service in `docker-compose.yml` to run your script
+- `docker-compose build`
+- `docker-compose up warp`
 
-### No docker
+### Test
 
-- Install opencv4nodejs manually
-    - (`opencv4nodejs` is not inside the `package.json` because the docker container doesn't run otherwise)
-- Run the code
+Sadly, because of the nature of this application it is not quite possible to push test images to git without infringing someone's privacy.
+In order to run the test, you have to create test images first.
+
+Each directory in `./test/images` contains the test images as well as a reference image of the expected result.
+
+The reference image has to be called `result.jpg` and it should be an image of the expected output.
+For example, if you want to test against images of you holding up the front side of your ID card, `result.jpg` should be a cropped scan of said card.
+
+The names of the other images are irrelevant. Every `.jpg` file except `result.jpg` is tested.
+
+After inserting the images, just run `docker-compose up test`.
+This will test if the output of the module for each test image is similar enough to `result.jpg`.
+Directories without a `result.jpg` are skipped.
+
+Also, a `graph.jpg` is generated in `./test/images` showing an overview of matched feature on each tested image.
