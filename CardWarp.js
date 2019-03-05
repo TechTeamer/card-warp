@@ -24,7 +24,7 @@ module.exports = class CardWarp {
    * @returns {Image} Returns an Image instance
    */
   async getCard (inputBuffer, reference, outputWidth = 500) {
-    let inputMat = await cv.imdecode(inputBuffer)
+    let inputMat = await cv.imdecodeAsync(inputBuffer)
 
     let {
       image: referenceImage,

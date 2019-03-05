@@ -1,7 +1,24 @@
 version: '3'
 services:
-  card-transform:
-    build: ..
+  warp:
+    build: .
     image: card-transform
     volumes:
       - "./:/source:rw"
+    working_dir: /source
+    entrypoint:
+      - /usr/bin/env
+      - NODE_PATH=/usr/local/lib/node_modules
+      - node
+      - test.js
+  test:
+    build: .
+    image: card-transform
+    volumes:
+      - "./:/source:rw"
+    working_dir: /source
+    entrypoint:
+      - /usr/bin/env
+      - NODE_PATH=/usr/local/lib/node_modules
+      - node
+      - /source/node_modules/mocha/bin/mocha
