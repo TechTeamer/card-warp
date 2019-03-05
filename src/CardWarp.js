@@ -1,3 +1,4 @@
+const sharp = require('sharp')
 const cv = require('opencv4nodejs')
 
 module.exports = class CardWarp {
@@ -5,7 +6,7 @@ module.exports = class CardWarp {
    * Initiates the card detector.
    */
   constructor () {
-    this.detector = new cv.SIFTDetector({nFeatures: 2000})
+    this.detector = new cv.SIFTDetector({nFeatures: 4000})
   }
 
   /**
@@ -84,7 +85,7 @@ module.exports = class CardWarp {
     warpColorCorrected = await colorCorrect(warped)
 
     return {
-      card: cv.imencode('.png', warpColorCorrected),
+      card: await gammaCorrect(cv.imencode('.png', warpColorCorrected)),
       probability: inliers / inputPoints.length
     }
   }
@@ -165,6 +166,15 @@ async function colorCorrect (inputMat) {
   let result = inputMat.convertTo(-1, alpha, beta + (Math.abs(beta) * 1.5))
 
   return result
+}
+
+/**
+ * Gamma corrects an input buffer using sharp
+ * @param inputBuffer
+ * @returns {Promise<Buffer>}
+ */
+async function gammaCorrect (inputBuffer) {
+  return await sharp(inputBuffer).gamma(3, 3).toBuffer()
 }
 
 /**
