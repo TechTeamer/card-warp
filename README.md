@@ -24,21 +24,23 @@ The probability is the quotient of the number of found points matching the geome
 
 **Example:**
 
-    const fs = require('fs')
-    const CardWarp = require('./src/CardWarp')
-    
-    let detector = new CardWarp()
-    let descriptors = CardWarp.generateDescriptors('features/id_new.jpg', detector.getDetector())
-    
-    detector.getCard(fs.readFileSync('input.jpg'), descriptors)
-      .then(obj => {
-        if (obj === false)
-          return console.log('No card found')
-    
-        console.log('Probability:', (obj.probability * 100).toFixed(2) + '%')
-    
-        fs.writeFileSync('output.png', obj.card)
-      })
+```javascript
+const fs = require('fs')
+const CardWarp = require('./src/CardWarp')
+
+let detector = new CardWarp()
+let descriptors = CardWarp.generateDescriptors('features/id_new.jpg', detector.getDetector())
+
+detector.getCard(fs.readFileSync('input.jpg'), descriptors)
+  .then(obj => {
+    if (obj === false)
+      return console.log('No card found')
+
+    console.log('Probability:', (obj.probability * 100).toFixed(2) + '%')
+
+    fs.writeFileSync('output.png', obj.card)
+  })
+```
 
 ### Docker
 
