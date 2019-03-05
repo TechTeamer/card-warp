@@ -26,7 +26,7 @@ The probability is the quotient of the number of found points matching the geome
 
 ```javascript
 const fs = require('fs')
-const CardWarp = require('./src/CardWarp')
+const CardWarp = require('./CardWarp')
 
 let detector = new CardWarp()
 let descriptors = CardWarp.generateDescriptors('features/id_new.jpg', detector.getDetector())
