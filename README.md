@@ -46,7 +46,6 @@ detector.getCard(fs.readFileSync('input.jpg'), descriptors)
 
 - Create a JS file that calls the API correctly
 - Edit the `warp` service in `docker-compose.yml` to run your script
-- `docker-compose build`
 - `docker-compose up warp`
 
 ### Test
