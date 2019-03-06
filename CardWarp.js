@@ -97,15 +97,15 @@ module.exports = class CardWarp {
    * @param downscaleWidth The width images should be downscaled to if they exceed it
    * @returns {Object} An object containing the corners, key points and feature descriptors of the reference images
    */
-  static generateDescriptors (path, detector, downscaleWidth = 1000) {
-    let image = cv.imread(path)
+  static async generateDescriptors (path, detector, downscaleWidth = 1000) {
+    let image = await cv.imreadAsync(path)
 
     let corners
     let keyPoints
     let descriptors
 
     if (image.cols > downscaleWidth)
-      image = image.resize(~~(downscaleWidth / image.cols * image.rows), downscaleWidth)
+      image = await image.resizeAsync(~~(downscaleWidth / image.cols * image.rows), downscaleWidth)
 
     corners = new cv.Mat([[
       [0, 0, 1],
@@ -114,8 +114,8 @@ module.exports = class CardWarp {
       [0, image.rows, 1]
     ]], cv.CV_32FC2)
 
-    keyPoints = detector.detect(image)
-    descriptors = detector.compute(image, keyPoints)
+    keyPoints = await detector.detectAsync(image)
+    descriptors = await detector.computeAsync(image, keyPoints)
 
     return {
       image,
