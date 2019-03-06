@@ -7,7 +7,8 @@
     "start": "node ./test"
   },
   "dependencies": {
-    "sharp": "^0.21.3"
+    "sharp": "^0.21.3",
+    "opencv4nodejs": "^4.14.1"
   },
   "devDependencies": {
     "mocha": "^6.0.2",
