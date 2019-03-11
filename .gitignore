@@ -1,7 +1,3 @@
 node_modules/
 .idea/
-testimages/
-features/
-test/images/*/*.jpg
-test/graph.jpg
-!/images/**/.gitkeep
+test/images/**/graph-*.jpg
