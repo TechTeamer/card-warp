@@ -6,21 +6,38 @@ This functionality is achieved by matching features using opencv.
 
 ## Requirements
 
-- Empty template of the card on the local disk, perfectly cropped and straight
+- Empty template of the card on the local disk, perfectly cropped and straight *([Example](./test/images/reference.jpg))*
     - Every feature removed that changes on each card while every feature left on it that stays the same
 - opencv built with `xfeatures2d`
 
+## Install
+
+- `npm install card-warp`
+
 ## Usage
 
-### API
+### Reference images
 
-The module exposes a `CardWarp` class. You can use `CardWarp::generateDescriptors` to generate descriptors for a reference image that should be matched (examples may be found in `./features`).
+The reference image is an image of the card, that should be matched, with everything, that changes over different cards, either blurred out, or removed, while everything, that stays the same, left in it.
+Blurring works, because it removes sharp edges, which would otherwise be detected by the feature detection algorithm.
+ 
+The feature detection algorithm detects edges, so if there are edges on the reference image, that might not occur on the image, that should be matched, the output will be less accurate.
+
+For instance, on an ID card, the face, name and other personal data should be removed, while labels like the country name, or the field descriptions should be left in.
+
+**Example:**
+
+![Example Reference Image](./test/images/reference.jpg)
+
+### How to use in a project
+
+The module exposes a `CardWarp` class. You can use `CardWarp::generateDescriptors` to generate descriptors for a reference image that should be matched.
 
 An image buffer together with the descriptors are then piped into `CardWarp#getCard` to generate an image of a straight, horizontal card.
 
 The result is a Promise resolving in an object with the key `card` being a buffer of the generated image as well as the key `probability` being a probability whether the result is actually a card.
 
-The probability is the quotient of the number of found points matching the geometric model and the total number of found points. Look at the source code for more information.
+The probability is the quotient of the number of found points matching the geometric model and the total number of found points. Have a look at the source code for more information.
 
 **Example:**
 
@@ -29,7 +46,7 @@ const fs = require('fs')
 const CardWarp = require('./CardWarp')
 
 let detector = new CardWarp()
-let descriptors = CardWarp.generateDescriptors('features/id_new.jpg', detector.getDetector())
+let descriptors = detector.generateDescriptors('features/id_new.jpg')
 
 detector.getCard(fs.readFileSync('input.jpg'), descriptors)
   .then(obj => {
@@ -42,28 +59,37 @@ detector.getCard(fs.readFileSync('input.jpg'), descriptors)
   })
 ```
 
-### Run in Docker
+### Demo examples
 
-- Remove the `opencv4nodejs` dependency from package.json
-    - `opencv4nodejs` gets installed globally in the `Dockerfile`
-- Create a JS file that calls the API correctly
-- Edit the `warp` service in `docker-compose.yml` to run your script
-- `docker-compose up warp`
+Each directory in `./test/images` contains the test images as well as an image of the expected result (`result.jpg`).
 
-### Test
+`./test/images/reference.jpg` is a reference image of the sample card that will be matched in the test images.
 
-Sadly, because of the nature of this application it is not quite possible to push test images to git without infringing someone's privacy.
-In order to run the test, you have to create test images first.
+`docker-compose up test` tests each image, checks if it is similar enough to the expected result as well as generates a `graph-*.jpg` for each tested image.
+The graph is an image that shows similarities between the expected result and the actual result, so a human can take a look at the output as well.
 
-Each directory in `./test/images` contains the test images as well as a reference image of the expected result.
+## API
 
-The reference image has to be called `result.jpg` and it should be an image of the expected output.
-For example, if you want to test against images of you holding up the front side of your ID card, `result.jpg` should be a cropped scan of said card.
+### `CardWarp`
 
-The names of the other images are irrelevant. Every `.jpg` file except `result.jpg` is tested.
+This is the only class this library exposes and it's used to generate feature descriptors as well as detect a card on an input image, warp it and output a straight image of said card.
 
-After inserting the images, just run `docker-compose up test`.
-This will test if the output of the module for each test image is similar enough to `result.jpg`.
-Directories without a `result.jpg` are skipped.
+#### `CardWarp#generateDescriptors (path, downscaleWidth = 1000): Promise<Object>`
 
-Also, a `graph.jpg` is generated in `./test/images` showing an overview of matched feature on each tested image.
+**Parameters:**
+
+- `path: string`: The path to the image on the local filesystem
+- `downscaleWidth: number`: The width images should be downscaled to if they exceed it
+
+This function generates and returns corners, key points and features descriptors of an image.
+It is separate, so this function can be run once at the application startup for every reference image, without having to re-generate the same descriptors every time an image is matched.
+
+#### `CardWarp#getCard (inputBuffer, reference, outputWidth = 500): Promise<Buffer>`
+
+**Parameters:**
+
+- `inputBuffer: Buffer`: The input image as a buffer
+- `reference: Object`: The descriptors acquired by `CardWarp#generateDescriptors`
+- `outputWidth: number`: The desired width of the output image
+
+This function detects and warps an output image based on the reference descriptors and returns a buffer of the warped card as PNG.

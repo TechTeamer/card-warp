@@ -10,13 +10,6 @@ module.exports = class CardWarp {
   }
 
   /**
-   * Get the used feature detector
-   */
-  getDetector () {
-    return this.detector
-  }
-
-  /**
    * Detects a card on a given image
    * @param inputBuffer Input image buffer
    * @param reference The descriptors of the reference image, acquired by CardWarp::generateDescriptors
@@ -93,11 +86,10 @@ module.exports = class CardWarp {
   /**
    * Generates corners, key points and feature descriptors of an image
    * @param path The path to the image on the local filesystem
-   * @param detector The detector to use
    * @param downscaleWidth The width images should be downscaled to if they exceed it
    * @returns {Object} An object containing the corners, key points and feature descriptors of the reference images
    */
-  static async generateDescriptors (path, detector, downscaleWidth = 1000) {
+  async generateDescriptors (path, downscaleWidth = 1000) {
     let image = await cv.imreadAsync(path)
 
     let corners
@@ -114,8 +106,42 @@ module.exports = class CardWarp {
       [0, image.rows, 1]
     ]], cv.CV_32FC2)
 
-    keyPoints = await detector.detectAsync(image)
-    descriptors = await detector.computeAsync(image, keyPoints)
+    keyPoints = await this.detector.detectAsync(image)
+    descriptors = await this.detector.computeAsync(image, keyPoints)
+
+    return {
+      image,
+      corners,
+      keyPoints,
+      descriptors
+    }
+  }
+
+  /**
+   * Generates corners, key points and feature descriptors of an image synchronously
+   * @param path The path to the image on the local filesystem
+   * @param downscaleWidth The width images should be downscaled to if they exceed it
+   * @returns {Object} An object containing the corners, key points and feature descriptors of the reference images
+   */
+  generateDescriptorsSync (path, downscaleWidth = 1000) {
+    let image = cv.imread(path)
+
+    let corners
+    let keyPoints
+    let descriptors
+
+    if (image.cols > downscaleWidth)
+      image = image.resize(~~(downscaleWidth / image.cols * image.rows), downscaleWidth)
+
+    corners = new cv.Mat([[
+      [0, 0, 1],
+      [image.cols, 0, 1],
+      [image.cols, image.rows, 1],
+      [0, image.rows, 1]
+    ]], cv.CV_32FC2)
+
+    keyPoints = this.detector.detect(image)
+    descriptors = this.detector.compute(image, keyPoints)
 
     return {
       image,

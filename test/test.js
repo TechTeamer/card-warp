@@ -1,95 +1,61 @@
-const sharp = require('sharp')
-const cv = require('opencv4nodejs')
-const expect = require('chai').expect
-const path = require('path')
 const fs = require('fs')
-
-const CardWarp = require('../CardWarp')
+const test = require('ava')
+const path = require('path')
+const cv = require('opencv4nodejs')
+const CardWarp = require('../src/CardWarp')
 
 let cardWarp = new CardWarp()
+
+let referenceDescriptors
 let resultGraphs = []
 
-describeDir('New ID (front)', 'test/images/id_new')
-describeDir('New ID (back)', 'test/images/id_new_back')
-describeDir('Old ID (front)', 'test/images/id_old')
-describeDir('Old ID (back)', 'test/images/id_old_back')
-describeDir('Passport', 'test/images/passport')
-
-function describeDir (name, dir) {
-  describe(name, function () {
-    let { resultDescriptors, images } = readDir(dir)
-    let graphs = []
-
-    if (resultDescriptors === false)
-      return console.log(`Skipping ${dir} because it does not contain a 'result.jpg'...`)
-
-    for (let image of images) {
-      let card
-
-      before(function (done) {
-        cardWarp.getCard(image.buffer, resultDescriptors)
-          .then(c => {
-            card = c
-            done()
-          })
-      })
-
-      describe(image.name, function () {
-        it('should result in a probability above 40%', function () {
-          expect(card.probability).to.be.above(0.4)
-        })
-
-        it('should have a similarity above 40%', async function () {
-          let { similarity, graph } = await checkSimilarities(card.card, resultDescriptors)
-
-          graphs.push(graph)
-
-          expect(similarity).to.be.above(0.4)
-        })
-      })
-    }
-
-    after(function () {
-      let maxWidth = graphs.reduce((a, v) => v.cols < a ? a : v.cols, 0)
-      let height = graphs.reduce((a, v) => a + v.rows, 0)
-
-      let resultMat = new cv.Mat(height, maxWidth, cv.CV_8UC3, [0, 0, 0])
-
-      let top = 0
-
-      for (let graph of graphs) {
-        graph.copyTo(resultMat.getRegion(new cv.Rect(0, top, graph.cols, graph.rows)))
-
-        top += graph.rows
-      }
-
-      resultGraphs.push(resultMat)
-    })
-  })
-}
-
-after(function () {
-  console.log('Generating result graphics...')
-  this.timeout(20000)
-
-  let maxHeight = resultGraphs.reduce((a, v) => v.rows < a ? a : v.rows, 0)
-  let width = resultGraphs.reduce((a, v) => a + v.cols, 0)
-
-  let resultMat = new cv.Mat(maxHeight, width, cv.CV_8UC3, [0, 0, 0])
-
-  let left = 0
-
-  for (let graphs of resultGraphs) {
-    graphs.copyTo(resultMat.getRegion(new cv.Rect(left, 0, graphs.cols, graphs.rows)))
-
-    left += graphs.cols
-  }
-
-  cv.imwrite('test/graph.jpg', resultMat)
+test.before('Generate Descriptors', async () => {
+  referenceDescriptors = await cardWarp.generateDescriptors(path.resolve('test/images/reference.jpg'))
 })
 
+for (let name of [ 'Emerson Allen', 'Jonathan Pelchat', 'Joshua Gould' ]) {
+  let samplePath = path.join(path.resolve('test/images'), name.toLowerCase().split(' ').join('-'))
+  let graphs = []
+
+  test(name, async t => {
+    let { resultDescriptors, images } = await readDir(samplePath)
+
+    for (let { name, buffer } of images) {
+      let card = await cardWarp.getCard(buffer, referenceDescriptors)
+
+      t.is(card.probability > 0.4, true, `Probability of ${name} greater than 0.4`)
+
+      let { similarity, graph } = await checkSimilarities(card.card, resultDescriptors)
+
+      t.is(similarity > 0.4, true, `Similarity of ${name} and result.jpg greater than 0.4`)
+
+      cv.imwrite(path.join(samplePath, `graph-${name}`), graph)
+    }
+  })
+
+  resultGraphs.push(graphs)
+}
+
+async function readDir (dir) {
+  let files = fs.readdirSync(dir).filter(fileName => path.extname(fileName) === '.jpg' && !fileName.startsWith('graph-'))
+  let result = {}
+
+  if (!files.includes('result.jpg'))
+    return { resultDescriptors: false, images: false}
+
+  result.resultDescriptors = await cardWarp.generateDescriptors(path.resolve(dir, 'result.jpg'))
+  result.images = files
+    .filter(fileName => fileName !== 'result.jpg')
+    .map(name => ({
+      name,
+      buffer: fs.readFileSync(path.resolve(dir, name))
+    }))
+
+  return result
+}
+
 async function checkSimilarities (inputBuffer, result) {
-  let detector = cardWarp.getDetector()
+  let detector = new cv.SIFTDetector({nFeatures: 4000})
   let inputMat = await cv.imdecodeAsync(inputBuffer)
 
   let {
@@ -114,6 +80,9 @@ async function checkSimilarities (inputBuffer, result) {
 
   let graph
 
+  let homography
+  let mask
+
   let inliers = 0
 
   for (let match of rawMatches)
@@ -126,7 +95,7 @@ async function checkSimilarities (inputBuffer, result) {
 
   let sortedMatches = goodMatches
     .sort((m1, m2) => m1.distance - m2.distance)
-    .slice(0, 100)
+    .slice(0, 20)
 
   graph = cv.drawMatches(resultImage, inputMat, resultKeyPoints, inputKeyPoints, sortedMatches)
 
@@ -142,22 +111,4 @@ async function checkSimilarities (inputBuffer, result) {
     similarity: inliers / inputPoints.length,
     graph
   }
-}
-
-function readDir (dir) {
-  let files = fs.readdirSync(dir).filter(fileName => path.extname(fileName) === '.jpg')
-  let result = {}
-
-  if (!files.includes('result.jpg'))
-    return { resultDescriptors: false, images: false}
-
-  result.resultDescriptors = CardWarp.generateDescriptors(path.resolve(dir, 'result.jpg'), cardWarp.getDetector())
-  result.images = files
-    .filter(fileName => fileName !== 'result.jpg' && fileName !== 'graph.jpg')
-    .map(name => ({
-      name: path.basename(name, '.jpg'),
-      buffer: fs.readFileSync(path.resolve(dir, name))
-    }))
-
-  return result
 }
