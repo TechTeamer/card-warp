@@ -1,0 +1,22 @@
+{
+  "extends": "standard",
+  "rules": {
+    "curly": "error",
+    "guard-for-in": "error",
+    "no-console": "error",
+    "no-debugger": "error",
+    "node/no-unsupported-features/es-syntax": ["error", {
+      "version": ">=10.14.2",
+      "ignores": []
+    }],
+    "node/no-unsupported-features/es-builtins": ["error", {
+      "version": ">=10.14.2",
+      "ignores": []
+    }],
+    "node/no-deprecated-api": "warn"
+  },
+  "env": {
+    "commonjs": true,
+    "es6": true
+  }
+}
