@@ -40,8 +40,9 @@ async function readDir (dir) {
   let files = fs.readdirSync(dir).filter(fileName => path.extname(fileName) === '.jpg' && !fileName.startsWith('graph-'))
   let result = {}
 
-  if (!files.includes('result.jpg'))
-    return { resultDescriptors: false, images: false}
+  if (!files.includes('result.jpg')) {
+    return { resultDescriptors: false, images: false }
+  }
 
   result.resultDescriptors = await cardWarp.generateDescriptors(path.resolve(dir, 'result.jpg'))
   result.images = files
@@ -55,7 +56,7 @@ async function readDir (dir) {
 }
 
 async function checkSimilarities (inputBuffer, result) {
-  let detector = new cv.SIFTDetector({nFeatures: 4000})
+  let detector = new cv.SIFTDetector({ nFeatures: 4000 })
   let inputMat = await cv.imdecodeAsync(inputBuffer)
 
   let {
@@ -67,10 +68,11 @@ async function checkSimilarities (inputBuffer, result) {
   let inputKeyPoints = await detector.detectAsync(inputMat)
   let inputDescriptors = await detector.computeAsync(inputMat, inputKeyPoints)
 
-  if (inputDescriptors.rows === 0)
+  if (inputDescriptors.rows === 0) {
     return {
       similarity: 0
     }
+  }
 
   let rawMatches = await cv.matchKnnFlannBasedAsync(resultDescriptors, inputDescriptors, 2)
   let goodMatches = []
@@ -80,18 +82,18 @@ async function checkSimilarities (inputBuffer, result) {
 
   let graph
 
-  let homography
   let mask
 
   let inliers = 0
 
-  for (let match of rawMatches)
-    if (match.length === 2 && match[0].distance < match[1].distance * .75) {
+  for (let match of rawMatches) {
+    if (match.length === 2 && match[0].distance < match[1].distance * 0.75) {
       goodMatches.push(match[0])
 
       resultPoints.push(resultKeyPoints[match[0].queryIdx].point)
       inputPoints.push(inputKeyPoints[match[0].trainIdx].point)
     }
+  }
 
   let sortedMatches = goodMatches
     .sort((m1, m2) => m1.distance - m2.distance)
@@ -99,7 +101,7 @@ async function checkSimilarities (inputBuffer, result) {
 
   graph = cv.drawMatches(resultImage, inputMat, resultKeyPoints, inputKeyPoints, sortedMatches)
 
-  ;({ homography, mask } = cv.findHomography(resultPoints, inputPoints, cv.RANSAC, 4))
+  ;({ mask } = cv.findHomography(resultPoints, inputPoints, cv.RANSAC, 4))
 
   for (let i = 0; i < inputPoints.length; i++) {
     if (mask.at(i, 0) === 1) {
