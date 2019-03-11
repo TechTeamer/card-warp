@@ -45,7 +45,7 @@ module.exports = class CardWarp {
     let warpColorCorrected
 
     if (inputDescriptors.rows === 0) {
-      return false
+      return { card: null, probability: 0 }
     }
 
     rawMatches = await cv.matchKnnFlannBasedAsync(referenceDescriptors, inputDescriptors, 2)
@@ -68,7 +68,7 @@ module.exports = class CardWarp {
     }
 
     if (homography.cols !== 3) {
-      return false
+      return { card: null, probability: 0 }
     }
 
     cardPointsMat = await referenceCorners.perspectiveTransformAsync(homography)
