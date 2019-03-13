@@ -5,12 +5,12 @@ const DEFAULT_OPTIONS = {
   detectionRectangleHeight: 240,
   detectionWidth: 50,
 
-  cannyLowerThreshold: 150,
+  cannyLowerThreshold: 100,
   cannyThresholdRatio: 3,
 
   houghRho: 1,
   houghTheta: Math.PI / 180,
-  houghThreshold: 75
+  houghThreshold: 50
 }
 
 module.exports = class HoughTransformWarper {
@@ -28,7 +28,7 @@ module.exports = class HoughTransformWarper {
   async getCard (inputBuffer, outputWidth = 750, outputHeight = 500) {
     let inputMat = await cv.imdecodeAsync(inputBuffer)
     let region = getDetectionRectangle(inputMat, this.options.detectionRectangleWidth, this.options.detectionRectangleHeight)
-    let blurredRegion = await region.medianBlurAsync(3)
+    let blurredRegion = await region.medianBlurAsync(1)
 
     let borderRegions = getDetectionBorders(blurredRegion, this.options.detectionWidth)
 
@@ -40,7 +40,13 @@ module.exports = class HoughTransformWarper {
     for (let borderRegion of borderRegions) {
       let edge = await borderRegion.regionMat.cannyAsync(this.options.cannyLowerThreshold, this.options.cannyLowerThreshold * this.options.cannyThresholdRatio)
       let lines = await getLines(edge, this.options.houghRho, this.options.houghTheta, this.options.houghThreshold)
-      let bestLine = findBestLine(lines)
+      let bestLine
+
+      if (lines.length === 0) {
+        return null
+      }
+
+      bestLine = findBestLine(lines)
 
       switch (borderRegion.type) {
         case BorderRegion.TOP:
@@ -74,6 +80,12 @@ module.exports = class HoughTransformWarper {
     cornerPoints.topRight = findIntersection(bestLines.top, bestLines.right)
     cornerPoints.bottomLeft = findIntersection(bestLines.bottom, bestLines.left)
     cornerPoints.bottomRight = findIntersection(bestLines.bottom, bestLines.right)
+
+    for (let points of [ cornerPoints.topLeft, cornerPoints.topRight, cornerPoints.bottomLeft, cornerPoints.bottomRight ]) {
+      if (points.x === 0 || points.y === 0) {
+        return null
+      }
+    }
 
     warped = await warp(region, cornerPoints, outputWidth, outputHeight)
 

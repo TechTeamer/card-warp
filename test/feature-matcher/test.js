@@ -2,7 +2,7 @@ const fs = require('fs')
 const test = require('ava')
 const path = require('path')
 const cv = require('opencv4nodejs')
-const CardWarp = require('../src/CardWarp')
+const CardWarp = require('../src/FeatureMatcherWarper')
 
 let cardWarp = new CardWarp()
 
