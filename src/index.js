@@ -1,7 +1,4 @@
-const HoughTransform = require('./HoughTransform')
-const FeatureMatcher = require('./FeatureMatcher')
+const HoughTransformWarper = require('./HoughTransformWarper')
+const FeatureMatcherWarper = require('./FeatureMatcherWarper')
 
-module.exports = {
-  HoughTransform,
-  FeatureMatcher
-}
+module.exports = { HoughTransformWarper, FeatureMatcherWarper }

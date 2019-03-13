@@ -1,6 +1,6 @@
 const cv = require('opencv4nodejs')
 
-module.exports = class CardWarp {
+module.exports = class FeatureMatcherWarper {
   /**
    * Initiates the card detector.
    */

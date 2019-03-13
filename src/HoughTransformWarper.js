@@ -13,7 +13,7 @@ const DEFAULT_OPTIONS = {
   houghThreshold: 75
 }
 
-module.exports = class HoughTransform {
+module.exports = class HoughTransformWarper {
   constructor (options = {}) {
     this.options = Object.assign({}, DEFAULT_OPTIONS, options)
   }
