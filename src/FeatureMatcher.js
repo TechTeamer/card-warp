@@ -13,7 +13,7 @@ module.exports = class CardWarp {
    * @param {Buffer} inputBuffer Input image buffer
    * @param {Object} reference The descriptors of the reference image, acquired by CardWarp::generateDescriptors
    * @param {number} outputWidth Width of the output picture
-   * @returns {Buffer} Returns a PNG image buffer
+   * @returns {Buffer} PNG image buffer
    */
   async getCard (inputBuffer, reference, outputWidth = 500) {
     let inputMat = await cv.imdecodeAsync(inputBuffer)
