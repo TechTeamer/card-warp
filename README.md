@@ -83,7 +83,7 @@ The probability is the quotient of the number of found points matching the geome
 
 ```javascript
 const fs = require('fs')
-const FeatureMatcher = require('@techteamer/card-warp').FeatureMatcher
+const FeatureMatcher = require('@techteamer/card-warp').FeatureMatcherWarper
 
 let detector = new FeatureMatcher()
 let descriptors = detector.generateDescriptors('features/id_new.jpg')
@@ -120,7 +120,7 @@ The result is a Promise resolving in a buffer of the generated image.
 
 ```javascript
 const fs = require('fs')
-const HoughTransform = require('@techteamer/card-warp').HoughTransform
+const HoughTransform = require('@techteamer/card-warp').HoughTransformWarper
 
 let detector = new HoughTransform({
   "detectionRectangleWidth": 450,
