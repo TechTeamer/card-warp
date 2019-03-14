@@ -4,6 +4,7 @@ const DEFAULT_OPTIONS = {
   detectionRectangleWidth: 320,
   detectionRectangleHeight: 240,
   detectionWidth: 50,
+  outputWidth: 500,
 
   cannyLowerThreshold: 100,
   cannyThresholdRatio: 3,
@@ -14,6 +15,14 @@ const DEFAULT_OPTIONS = {
 }
 
 module.exports = class HoughTransformWarper {
+  /**
+   * @param {Object} [options] Default options are replaced by this
+   * @param {number} [options.outputWidth] Desired width of the output image.
+   * @param {number} [options.outputHeight] Desired height of the output image
+   * @param {number} [options.detectionRectangleWidth] Detection rectangle width
+   * @param {number} [options.detectionRectangleHeight] Detection rectangle height
+   * @param {number} [options.detectionWidth] Width of the detection border regions
+   */
   constructor (options = {}) {
     this.options = Object.assign({}, DEFAULT_OPTIONS, options)
   }
@@ -21,16 +30,26 @@ module.exports = class HoughTransformWarper {
   /**
    * Detects a card within the detection rectangle configured in the constructor and returns a straightly-warped image of said card
    * @param {Buffer} inputBuffer Input image buffer
-   * @param {number} outputWidth Width of the output picture
-   * @param {number} outputHeight Height of the output picture
+   * @param {Object} [_options] The default options passed in the constructor will be replaced by this parameter for the current call
+   * @param {number} [_options.outputWidth] Desired width of the output image.
+   * @param {number} [_options.outputHeight] Desired height of the output image
+   * @param {number} [_options.detectionRectangleWidth] Detection rectangle width
+   * @param {number} [_options.detectionRectangleHeight] Detection rectangle height
+   * @param {number} [_options.detectionWidth] Width of the detection border regions
    * @returns {Promise<Buffer>} PNG image buffer
    */
-  async getCard (inputBuffer, outputWidth = 750, outputHeight = 500) {
+  async getCard (inputBuffer, _options = {}) {
+    let options = Object.assign({}, this.options, _options)
+
+    if (!options.hasOwnProperty('outputHeight')) {
+      options.outputHeight = Math.abs(options.outputWidth * (options.detectionRectangleHeight / options.detectionRectangleWidth))
+    }
+
     let inputMat = await cv.imdecodeAsync(inputBuffer)
-    let region = getDetectionRectangle(inputMat, this.options.detectionRectangleWidth, this.options.detectionRectangleHeight)
+    let region = getDetectionRectangle(inputMat, options.detectionRectangleWidth, options.detectionRectangleHeight)
     let blurredRegion = await region.medianBlurAsync(1)
 
-    let borderRegions = getDetectionBorders(blurredRegion, this.options.detectionWidth)
+    let borderRegions = getDetectionBorders(blurredRegion, options.detectionWidth)
 
     let bestLines = {}
     let cornerPoints = {}
@@ -57,15 +76,15 @@ module.exports = class HoughTransformWarper {
           break
         case BorderRegion.BOTTOM:
           bestLines.bottom = new Line(
-            new cv.Point2(bestLine.p1.x, bestLine.p1.y + region.rows - this.options.detectionWidth),
-            new cv.Point2(bestLine.p2.x, bestLine.p2.y + region.rows - this.options.detectionWidth),
+            new cv.Point2(bestLine.p1.x, bestLine.p1.y + region.rows - options.detectionWidth),
+            new cv.Point2(bestLine.p2.x, bestLine.p2.y + region.rows - options.detectionWidth),
             bestLine.slope
           )
           break
         case BorderRegion.RIGHT:
           bestLines.right = new Line(
-            new cv.Point2(bestLine.p1.x + region.cols - this.options.detectionWidth, bestLine.p1.y),
-            new cv.Point2(bestLine.p2.x + region.cols - this.options.detectionWidth, bestLine.p2.y),
+            new cv.Point2(bestLine.p1.x + region.cols - options.detectionWidth, bestLine.p1.y),
+            new cv.Point2(bestLine.p2.x + region.cols - options.detectionWidth, bestLine.p2.y),
             bestLine.slope
           )
           break
@@ -87,7 +106,7 @@ module.exports = class HoughTransformWarper {
       }
     }
 
-    warped = await warp(region, cornerPoints, outputWidth, outputHeight)
+    warped = await warp(region, cornerPoints, options.outputWidth, options.outputHeight)
 
     return cv.imencodeAsync('.png', warped)
   }
