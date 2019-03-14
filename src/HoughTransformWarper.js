@@ -179,14 +179,12 @@ function getDetectionRectangle (inputMat, detectionRectangleWidth, detectionRect
   let detRectX = (inputMat.cols - detectionRectangleWidth) / 2
   let detRectY = (inputMat.rows - detectionRectangleHeight) / 2
 
-  let region = inputMat.getRegion(new cv.Rect(
+  return inputMat.getRegion(new cv.Rect(
     detRectX,
     detRectY,
     detectionRectangleWidth,
     detectionRectangleHeight
   ))
-
-  return region
 }
 
 /**
@@ -299,9 +297,7 @@ async function warp (inputMat, cornerPoints, width, height) {
     new cv.Point2(0, height)
   ])
 
-  let warped = await inputMat.warpPerspectiveAsync(trans, new cv.Size(width, height))
-
-  return warped
+  return inputMat.warpPerspectiveAsync(trans, new cv.Size(width, height))
 }
 
 class Line {
