@@ -174,13 +174,13 @@ This function detects and warps an output image based on the reference descripto
 
 ```javascript
 options = {
-  detectionRectangleWidth: 320,   // Width of the detection rectangle
-  detectionRectangleHeight: 240,  // Height of the detection rectangle
-  detectionWidth: 50,             // Width of the detection border regions
+  detectionRectangleWidth: 320,   // Default width of the detection rectangle
+  detectionRectangleHeight: 240,  // Default height of the detection rectangle
+  detectionWidth: 50,             // Default width of the detection border regions
 
   /*
    * Do not set these options if you don't know what you're doing.
-   * Otherwise it will mess things up.
+   * It might mess things up.
    */
   cannyLowerThreshold: 150,       // Lower threshold applied to Canny
   cannyThresholdRatio: 3,         // higherThreshold = cannyLowerThershold * cannyThresholdRatio
@@ -191,11 +191,17 @@ options = {
 }
 ```
 
-#### `#getCard (inputBuffer, outputWidth = 750, outputHeight = 500)`
+> Any missing key in the options will be replaced by the default options above.
+
+#### `#getCard (options = {}): Promise<Buffer>`
 
  **Parameters:**
  - `inputBuffer: Buffer`: The input image as a buffer
- - `outputWidth: number`: The desired output width of the warped image
- - `outputHeight: number`: The desired output height of the warped image
+ - *`_options: Object`: The default options passed in the constructor will be replaced by this parameter for the current call*
+ - *`_options.outputWidth: number`: Desired width of the output image*
+ - *`_options.outputHeight: number`: Desired height of the output image*
+ - *`_options.detectionRectangleWidth: number`: Detection rectangle width*
+ - *`_options.detectionRectangleHeight: number`: Detection rectangle height*
+ - *`_options.detectionWidth: number`: Width of the detection border regions*
 
 This function detects and warps an output image based on the reference descriptors and returns a buffer of the warped card as PNG.
