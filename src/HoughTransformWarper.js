@@ -6,12 +6,12 @@ const DEFAULT_OPTIONS = {
   detectionWidth: 50,
   outputWidth: 500,
 
-  cannyLowerThreshold: 100,
+  cannyLowerThreshold: 50,
   cannyThresholdRatio: 3,
 
   houghRho: 1,
   houghTheta: Math.PI / 180,
-  houghThreshold: 50
+  houghThreshold: 75
 }
 
 module.exports = class HoughTransformWarper {
@@ -47,7 +47,7 @@ module.exports = class HoughTransformWarper {
 
     let inputMat = await cv.imdecodeAsync(inputBuffer)
     let region = getDetectionRectangle(inputMat, options.detectionRectangleWidth, options.detectionRectangleHeight)
-    let blurredRegion = await region.medianBlurAsync(1)
+    let blurredRegion = await region.gaussianBlurAsync(new cv.Size(5, 5), 0)
 
     let borderRegions = getDetectionBorders(blurredRegion, options.detectionWidth)
 
@@ -57,15 +57,30 @@ module.exports = class HoughTransformWarper {
     let warped
 
     for (let borderRegion of borderRegions) {
+      let adaptiveThresh = await borderRegion.regionMat.cvtColor(cv.COLOR_BGR2GRAY).adaptiveThresholdAsync(255, cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY, 3, 0)
+      let blur = await adaptiveThresh.gaussianBlurAsync(new cv.Size(9, 9), 0)
+      let thresh = await blur.thresholdAsync(0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
+
+      let tempEdge = await thresh.cannyAsync(30, 150)
+
+      let tempLines = await getLines(tempEdge, this.options.houghRho, this.options.houghTheta, 75)
+
+      for (let line of tempLines) {
+        borderRegion.regionMat.drawLine(line.p1, line.p2, new cv.Vec3(255, 0, 0), 1)
+      }
+
+      /* cv.imwrite(`output/${borderRegion.type}.png`, borderRegion.regionMat)
+      cv.imwrite(`output/${borderRegion.type}-thresh.png`, tempEdge) */
+
       let edge = await borderRegion.regionMat.cannyAsync(this.options.cannyLowerThreshold, this.options.cannyLowerThreshold * this.options.cannyThresholdRatio)
       let lines = await getLines(edge, this.options.houghRho, this.options.houghTheta, this.options.houghThreshold)
       let bestLine
 
-      if (lines.length === 0) {
+      if (tempLines.length === 0) {
         return null
       }
 
-      bestLine = findBestLine(lines)
+      bestLine = findBestLine(tempLines)
 
       switch (borderRegion.type) {
         case BorderRegion.TOP:
@@ -143,16 +158,17 @@ async function getLines (edgesMat, houghRho, houghTheta, houghThreshold) {
  * @param {Line[]} lines
  */
 function findBestLine (lines) {
+  /*
   let minSlopeDiff
   let minDiffLines
 
   for (let line1 of lines) {
     for (let line2 of lines) {
-      let slopeDiff = line1.slope - line2.slope
+      let slopeDiff = Math.abs(line1.slope - line2.slope)
 
-      if (slopeDiff === 0) {
-        continue
-      }
+      //  if (slopeDiff === 0) {
+      //   continue
+      // }
 
       if (!minSlopeDiff || slopeDiff < minSlopeDiff) {
         minSlopeDiff = slopeDiff
@@ -165,7 +181,9 @@ function findBestLine (lines) {
     minDiffLines = [ lines[0], lines[0] ]
   }
 
-  return lineAverage(minDiffLines[0], minDiffLines[1])
+  return lineAverage(minDiffLines[0], minDiffLines[1]) */
+
+  return lineAverage(...lines)
 }
 
 /**
@@ -241,31 +259,31 @@ function lineAverage (...lines) {
  */
 function getDetectionBorders (inputMat, detectionWidth) {
   let top = inputMat.getRegion(new cv.Rect(
+    detectionWidth,
     0,
-    0,
-    inputMat.cols,
+    inputMat.cols - detectionWidth,
     detectionWidth
   ))
 
   let bottom = inputMat.getRegion(new cv.Rect(
-    0,
+    detectionWidth,
     inputMat.rows - detectionWidth,
-    inputMat.cols,
+    inputMat.cols - detectionWidth,
     detectionWidth
   ))
 
   let left = inputMat.getRegion(new cv.Rect(
     0,
-    0,
     detectionWidth,
-    inputMat.rows
+    detectionWidth,
+    inputMat.rows - detectionWidth
   ))
 
   let right = inputMat.getRegion(new cv.Rect(
     inputMat.cols - detectionWidth,
-    0,
     detectionWidth,
-    inputMat.rows
+    detectionWidth,
+    inputMat.rows - detectionWidth
   ))
 
   return [
