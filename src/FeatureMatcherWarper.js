@@ -42,7 +42,6 @@ module.exports = class FeatureMatcherWarper {
     let inliers = 0
 
     let warped
-    let warpColorCorrected
 
     if (inputDescriptors.rows === 0) {
       return { card: null, probability: 0 }
@@ -80,10 +79,9 @@ module.exports = class FeatureMatcherWarper {
     }
 
     warped = await warp(inputMat, cardPoints, outputWidth, ~~((outputWidth / referenceImage.cols) * referenceImage.rows))
-    warpColorCorrected = await colorCorrect(warped)
 
     return {
-      card: cv.imencode('.png', warpColorCorrected),
+      card: cv.imencode('.png', warped),
       probability: inliers / inputPoints.length
     }
   }
@@ -122,49 +120,6 @@ module.exports = class FeatureMatcherWarper {
       descriptors
     }
   }
-}
-
-/**
- * Color-corrects a Mat
- * @param {cv.Mat} inputMat Input Mat
- * @returns {Promise<cv.Mat>}
- */
-async function colorCorrect (inputMat) {
-  let gray = inputMat.cvtColor(cv.COLOR_BGR2GRAY)
-
-  let histogram = cv.calcHist(gray, [{
-    channel: 0,
-    bins: 256,
-    ranges: [ 0, 256 ]
-  }])
-
-  let accumulator = []
-
-  accumulator.push(histogram.at(0, 0))
-
-  for (let i = 1; i < 256; i++) {
-    accumulator.push(accumulator[i - 1] + histogram.at(i, 0))
-  }
-
-  let max = accumulator[accumulator.length - 1]
-
-  let minGray = 0
-  while (accumulator[minGray] < 1) {
-    minGray++
-  }
-
-  let maxGray = 255
-  while (accumulator[maxGray] >= (max - 1)) {
-    maxGray--
-  }
-
-  let inputRange = maxGray - minGray
-  let alpha = 255 / inputRange
-  let beta = -minGray * alpha
-
-  let result = inputMat.convertTo(-1, alpha, beta + (Math.abs(beta) * 1.5))
-
-  return result
 }
 
 /**
