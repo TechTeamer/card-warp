@@ -8,3 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Card detection functionality
 - Card warping functionality
 - Tests
+
+## [1.0.1] - 2019-04-01
+### Changed
+- .npmignore
