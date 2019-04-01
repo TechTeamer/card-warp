@@ -50,7 +50,7 @@ Four corner points are then by determined by calculating the intersections of sa
 
 ## Install
 
-- `npm install card-warp`
+- `npm install @techteamer/card-warp`
 
 ## Usage
 
