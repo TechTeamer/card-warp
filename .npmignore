@@ -1,0 +1,10 @@
+test/
+.editorconfig
+.eslintignore
+.eslintrc.json
+.gitignore
+.npmignore
+.travis.yml
+CHANGELOG.md
+docker-compose.yml
+Dockerfile
