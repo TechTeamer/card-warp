@@ -1,6 +1,6 @@
 {
   "name": "@techteamer/card-warp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Detects a card on an image and warps it straight",
   "main": "src/index.js",
   "engines": {
