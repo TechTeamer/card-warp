@@ -3,6 +3,10 @@
   "version": "1.0.1",
   "description": "Detects a card on an image and warps it straight",
   "main": "src/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TechTeamer/card-warp.git"
+  },
   "engines": {
     "node": ">=6.12.3 <7 || >=8.9.4 <9 || >=10.0.0"
   },
