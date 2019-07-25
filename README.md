@@ -86,7 +86,7 @@ const fs = require('fs')
 const FeatureMatcher = require('@techteamer/card-warp').FeatureMatcherWarper
 
 let detector = new FeatureMatcher()
-let descriptors = detector.generateDescriptors('features/id_new.jpg')
+let descriptors = await detector.generateDescriptors('features/id_new.jpg')
 
 detector.getCard(fs.readFileSync('input.jpg'), descriptors)
   .then(obj => {
