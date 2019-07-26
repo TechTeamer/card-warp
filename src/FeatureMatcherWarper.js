@@ -21,12 +21,10 @@ module.exports = class FeatureMatcherWarper {
     let inputMat = await cv.imdecodeAsync(inputBuffer)
 
     // Setting default options
-    if (typeof options.outputWidth === 'undefined') {
-      options.outputWidth = 500
-    }
-    if (typeof options.outputExtension === 'undefined') {
-      options.outputExtension = '.png'
-    }
+    options = Object.assign({}, {
+        outputWidth: 500,
+        outputExtension: '.png'
+    }, options)
 
     let {
       image: referenceImage,
