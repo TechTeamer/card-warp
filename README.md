@@ -90,8 +90,9 @@ let descriptors = await detector.generateDescriptors('features/id_new.jpg')
 
 detector.getCard(fs.readFileSync('input.jpg'), descriptors)
   .then(obj => {
-    if (obj === false)
+    if (obj === false) {
       return console.log('No card found')
+    }
 
     console.log('Probability:', (obj.probability * 100).toFixed(2) + '%')
 
@@ -157,14 +158,16 @@ This is the only class this library exposes and it's used to generate feature de
 This function generates and returns corners, key points and features descriptors of an image.
 It is separate, so this function can be run once at the application startup for every reference image, without having to re-generate the same descriptors every time an image is matched.
 
-#### `#getCard (inputBuffer, reference, outputWidth = 500): Promise<Buffer>`
+#### `#getCard (inputBuffer, reference, options = { outputWidth: 500, outputExtension: '.png' }): Promise<Buffer>`
 
 **Parameters:**
 - `inputBuffer: Buffer`: The input image as a buffer
 - `reference: Object`: The descriptors acquired by `FeatureMatcherWarper#generateDescriptors`
-- `outputWidth: number`: The desired width of the output image
+- `options: Object`: Optional options
+- `options.outputWidth: number`: The desired width of the output image
+- `options.outputExtension: string`: The desired extension of the output image
 
-This function detects and warps an output image based on the reference descriptors and returns a buffer of the warped card as PNG.
+This function detects and warps an output image based on the reference descriptors and returns a buffer of the warped card as selected (default) PNG.
 
 ### `HoughTransformWarper`
 
