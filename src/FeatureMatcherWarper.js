@@ -12,11 +12,21 @@ module.exports = class FeatureMatcherWarper {
    * Detects a card on a given image
    * @param {Buffer} inputBuffer Input image buffer
    * @param {Object} reference The descriptors of the reference image, acquired by CardWarp::generateDescriptors
-   * @param {number} outputWidth Width of the output picture
-   * @returns {Buffer} PNG image buffer
+   * @param {Object} [options={}]
+   * @param {number} [options.outputWidth=500] Width of the output picture
+   * @param {string} [options.outputExtension=".png"] Extension of the output picture
+   * @returns {Buffer} PNG (or selected extension) image buffer
    */
-  async getCard (inputBuffer, reference, outputWidth = 500) {
+  async getCard (inputBuffer, reference, options = {}) {
     let inputMat = await cv.imdecodeAsync(inputBuffer)
+
+    // Setting default options
+    if (typeof options.outputWidth === 'undefined') {
+      options.outputWidth = 500
+    }
+    if (typeof options.outputExtension === 'undefined') {
+      options.outputExtension = '.png'
+    }
 
     let {
       image: referenceImage,
@@ -78,10 +88,10 @@ module.exports = class FeatureMatcherWarper {
       }
     }
 
-    warped = await warp(inputMat, cardPoints, outputWidth, ~~((outputWidth / referenceImage.cols) * referenceImage.rows))
+    warped = await warp(inputMat, cardPoints, options.outputWidth, ~~((options.outputWidth / referenceImage.cols) * referenceImage.rows))
 
     return {
-      card: cv.imencode('.png', warped),
+      card: cv.imencode(options.outputExtension, warped),
       probability: inliers / inputPoints.length
     }
   }
